@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tu Amigo Secreto 🎁</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            10%, 30%, 50%, 70%, 90% { transform: rotate(-5deg); }
+            20%, 40%, 60%, 80% { transform: rotate(5deg); }
+        }
+
+        @keyframes giftOpen {
+            0% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(10deg); }
+            100% { transform: scale(0) rotate(360deg); opacity: 0; }
+        }
+
+        @keyframes revealText {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .gift-box {
+            font-size: 120px;
+            cursor: pointer;
+            animation: float 3s ease-in-out infinite;
+            transition: transform 0.3s;
+        }
+
+        .gift-box:hover {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .gift-opening {
+            animation: giftOpen 1s ease-out forwards;
+        }
+
+        .reveal-container {
+            animation: revealText 0.8s ease-out;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.5); }
+        }
+
+        .sparkle {
+            animation: sparkle 2s ease-in-out infinite;
+        }
+
+        .ribbon {
+            position: absolute;
+            width: 100%;
+            height: 20px;
+            background: #e74c3c;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .ribbon-vertical {
+            position: absolute;
+            width: 20px;
+            height: 100%;
+            background: #e74c3c;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .bow {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 60px;
+        }
+    </style>
+</head>
+<body class="min-h-screen gradient-bg flex items-center justify-center p-4">
+    <div class="max-w-2xl w-full">
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl p-12 mb-6">
+                <div class="text-6xl mb-4 sparkle">⏳</div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Cargando...</h1>
+                <p class="text-gray-600">Preparando tu regalo especial...</p>
+            </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="hidden text-center fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl p-12 mb-6">
+                <div class="text-6xl mb-4">❌</div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">¡Oops!</h1>
+                <p class="text-gray-600 mb-4">Este enlace no es válido o ha expirado.</p>
+                <p class="text-sm text-gray-500">Por favor contacta al organizador del Amigo Secreto.</p>
+            </div>
+        </div>
+
+        <!-- Gift Opening State -->
+        <div id="giftState" class="hidden text-center">
+            <div class="bg-white rounded-2xl shadow-2xl p-12 mb-6 fade-in">
+                <h1 class="text-4xl font-bold text-gray-800 mb-4">
+                    ¡Hola <span id="giverName" class="text-purple-600"></span>! 🎅
+                </h1>
+                <p class="text-gray-600 mb-8 text-lg">
+                    Has sido seleccionado para participar en el <strong>Amigo Secreto</strong>
+                </p>
+
+                <div class="relative my-12">
+                    <div id="giftBox" class="gift-box inline-block relative" onclick="openGift()">
+                        🎁
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="text-2xl animate-bounce">👆</div>
+                        </div>
+                    </div>
+                    <p class="text-purple-600 font-semibold mt-4 text-xl">
+                        Haz clic en el regalo para descubrir tu asignación
+                    </p>
+                </div>
+
+                <div class="bg-blue-50 rounded-lg p-4 text-sm text-gray-600">
+                    <p>🤫 <strong>Recuerda:</strong> Mantén el secreto y no compartas esta información con nadie</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reveal State -->
+        <div id="revealState" class="hidden text-center">
+            <div class="bg-white rounded-2xl shadow-2xl p-12 mb-6 reveal-container">
+                <div class="text-6xl mb-6">🎉</div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-6">
+                    ¡Tu Amigo Secreto es...!
+                </h1>
+
+                <div class="bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl p-8 mb-6">
+                    <div class="text-7xl mb-4">🎁</div>
+                    <p class="text-gray-600 text-xl mb-2">Le vas a regalar a:</p>
+                    <h2 id="receiverName" class="text-5xl font-bold text-purple-600 mb-4"></h2>
+                    <div class="text-4xl">🎊</div>
+                </div>
+
+                <div class="space-y-4 text-left">
+                    <div class="bg-green-50 rounded-lg p-4">
+                        <p class="text-gray-700">
+                            <strong>✨ Consejos:</strong>
+                        </p>
+                        <ul class="list-disc list-inside text-gray-600 text-sm mt-2 space-y-1">
+                            <li>Piensa en algo que le guste a esta persona</li>
+                            <li>El presupuesto sugerido debe respetarse</li>
+                            <li>La creatividad vale más que el precio</li>
+                            <li>¡Mantén el secreto hasta el día del intercambio!</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-yellow-50 rounded-lg p-4">
+                        <p class="text-gray-700">
+                            <strong>🤫 Muy importante:</strong>
+                        </p>
+                        <p class="text-gray-600 text-sm mt-2">
+                            No le digas a nadie quién es tu amigo secreto. ¡Ese es el objetivo del juego!
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                    <button
+                        onclick="location.reload()"
+                        class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+                    >
+                        Ver de nuevo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-white/80 text-sm fade-in">
+            <p>Powered by Amigo Secreto App 🎅</p>
+        </div>
+    </div>
+
+    <script>
+        let giver = '';
+        let receiver = '';
+        let sessionId = '';
+        let hasOpened = false;
+
+        // Parse URL parameters on load
+        window.addEventListener('DOMContentLoaded', () => {
+            try {
+                const params = new URLSearchParams(window.location.search);
+
+                sessionId = params.get('s');
+                const giverEncoded = params.get('g');
+                const receiverEncoded = params.get('r');
+
+                if (!sessionId || !giverEncoded || !receiverEncoded) {
+                    showError();
+                    return;
+                }
+
+                // Decode the data
+                giver = decodeURIComponent(atob(giverEncoded));
+                receiver = decodeURIComponent(atob(receiverEncoded));
+
+                // Show gift state
+                setTimeout(() => {
+                    hideLoading();
+                    showGift();
+                }, 1000);
+
+            } catch (error) {
+                console.error('Error parsing URL:', error);
+                showError();
+            }
+        });
+
+        function hideLoading() {
+            document.getElementById('loadingState').classList.add('hidden');
+        }
+
+        function showError() {
+            hideLoading();
+            document.getElementById('errorState').classList.remove('hidden');
+        }
+
+        function showGift() {
+            document.getElementById('giftState').classList.remove('hidden');
+            document.getElementById('giverName').textContent = giver;
+
+            // Mark as opened in localStorage
+            markAsOpened();
+        }
+
+        function openGift() {
+            if (hasOpened) return;
+            hasOpened = true;
+
+            const giftBox = document.getElementById('giftBox');
+            giftBox.classList.add('gift-opening');
+            giftBox.style.pointerEvents = 'none';
+
+            // Trigger confetti
+            const duration = 3000;
+            const end = Date.now() + duration;
+
+            const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe'];
+
+            (function frame() {
+                confetti({
+                    particleCount: 3,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: colors
+                });
+                confetti({
+                    particleCount: 3,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: colors
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+
+            // Show reveal after animation
+            setTimeout(() => {
+                document.getElementById('giftState').classList.add('hidden');
+                showReveal();
+            }, 1200);
+        }
+
+        function showReveal() {
+            document.getElementById('revealState').classList.remove('hidden');
+            document.getElementById('receiverName').textContent = receiver;
+
+            // Big confetti burst
+            confetti({
+                particleCount: 150,
+                spread: 100,
+                origin: { y: 0.6 },
+                colors: ['#667eea', '#764ba2', '#f093fb', '#4facfe']
+            });
+
+            // Continue confetti for a bit
+            setTimeout(() => {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.7 }
+                });
+            }, 300);
+        }
+
+        function markAsOpened() {
+            if (!sessionId || !giver) return;
+
+            try {
+                const trackingKey = `secretSanta_tracking_${sessionId}`;
+                let trackingData = localStorage.getItem(trackingKey);
+                let opened = trackingData ? JSON.parse(trackingData) : {};
+
+                // Mark this participant as having opened their link
+                opened[giver] = true;
+
+                localStorage.setItem(trackingKey, JSON.stringify(opened));
+            } catch (error) {
+                console.error('Error marking as opened:', error);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -31,6 +31,13 @@
             transform: translateY(-4px);
             box-shadow: 0 10px 25px rgba(0,0,0,0.15);
         }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
     </style>
 </head>
 <body class="min-h-screen gradient-bg py-8 px-4">
@@ -86,6 +93,13 @@
                         <span>👀</span> Ver Asignaciones
                     </button>
                     <button
+                        onclick="showLinks()"
+                        id="showLinksBtn"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors hidden flex items-center gap-2"
+                    >
+                        <span>📱</span> Enviar Enlaces
+                    </button>
+                    <button
                         onclick="resetAll()"
                         class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2"
                     >
@@ -133,10 +147,32 @@
                 </div>
             </div>
 
+            <!-- Links Section -->
+            <div id="linksSection" class="border-t pt-6 hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">📱</span> Enlaces para Compartir
+                </h2>
+                <p class="text-gray-600 mb-4">Envía estos enlaces personalizados a cada participante por WhatsApp. Cuando abran el enlace, verán una animación especial revelando su asignación.</p>
+
+                <!-- Tracking Status -->
+                <div class="bg-blue-50 rounded-lg p-4 mb-4">
+                    <h3 class="font-semibold text-gray-800 mb-2 flex items-center">
+                        <span class="mr-2">📊</span> Estado de Enlaces
+                    </h3>
+                    <div id="trackingStatus" class="space-y-2">
+                        <!-- Tracking will be shown here -->
+                    </div>
+                </div>
+
+                <div id="linksList" class="space-y-3">
+                    <!-- Links will be added here -->
+                </div>
+            </div>
+
             <!-- Results Section -->
             <div id="resultsSection" class="border-t pt-6 hidden">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                    <span class="mr-2">🎁</span> Resultados
+                    <span class="mr-2">🎁</span> Resultados (Vista Organizador)
                 </h2>
                 <p class="text-gray-600 mb-4">Haz clic en cada persona para revelar a quién le regala:</p>
                 <div id="resultsList" class="space-y-3">
@@ -152,8 +188,9 @@
                 <li>Agrega los nombres de todos los participantes</li>
                 <li>(Opcional) Define exclusiones si hay personas que no pueden intercambiar regalos</li>
                 <li>Haz clic en "Generar Sorteo" para crear las asignaciones aleatorias</li>
-                <li>Revela las asignaciones una por una para mantener el secreto</li>
-                <li>¡Exporta los datos para guardarlos o compartirlos!</li>
+                <li>Comparte los enlaces personalizados por WhatsApp con cada participante</li>
+                <li>Cada persona verá su asignación con una animación especial</li>
+                <li>¡Monitorea quién ha abierto su enlace en tiempo real!</li>
             </ol>
         </div>
     </div>
@@ -163,12 +200,17 @@
         let participants = [];
         let exclusions = [];
         let assignments = {};
+        let sessionId = '';
+        let openedLinks = {};
 
         // Load data from localStorage on page load
         window.addEventListener('DOMContentLoaded', () => {
             loadFromStorage();
             renderParticipants();
             updateExclusionSelects();
+
+            // Refresh tracking status periodically
+            setInterval(updateTrackingStatus, 2000);
         });
 
         function loadFromStorage() {
@@ -178,9 +220,11 @@
                 participants = data.participants || [];
                 exclusions = data.exclusions || [];
                 assignments = data.assignments || {};
+                sessionId = data.sessionId || '';
 
                 if (Object.keys(assignments).length > 0) {
                     document.getElementById('showResultsBtn').classList.remove('hidden');
+                    document.getElementById('showLinksBtn').classList.remove('hidden');
                 }
             }
         }
@@ -189,8 +233,13 @@
             localStorage.setItem('secretSanta', JSON.stringify({
                 participants,
                 exclusions,
-                assignments
+                assignments,
+                sessionId
             }));
+        }
+
+        function generateSessionId() {
+            return 'ss_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
         }
 
         function addParticipant() {
@@ -248,7 +297,7 @@
                 <div class="flex items-center justify-between bg-gray-50 px-4 py-3 rounded-lg slide-in" style="animation-delay: ${index * 0.05}s">
                     <span class="font-medium text-gray-800">${name}</span>
                     <button
-                        onclick="removeParticipant('${name}')"
+                        onclick="removeParticipant('${escapeHtml(name)}')"
                         class="text-red-600 hover:text-red-800 font-bold text-xl transition-colors"
                         title="Eliminar"
                     >
@@ -262,7 +311,7 @@
             const fromSelect = document.getElementById('excludeFrom');
             const toSelect = document.getElementById('excludeTo');
 
-            const options = participants.map(p => `<option value="${p}">${p}</option>`).join('');
+            const options = participants.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
             fromSelect.innerHTML = '<option value="">Seleccionar persona...</option>' + options;
             toSelect.innerHTML = '<option value="">No puede regalarle a...</option>' + options;
         }
@@ -307,9 +356,9 @@
 
             container.innerHTML = exclusions.map(e => `
                 <div class="flex items-center justify-between bg-orange-50 px-3 py-2 rounded text-sm">
-                    <span class="text-gray-700">${e.from} → <span class="font-semibold">NO</span> → ${e.to}</span>
+                    <span class="text-gray-700">${escapeHtml(e.from)} → <span class="font-semibold">NO</span> → ${escapeHtml(e.to)}</span>
                     <button
-                        onclick="removeExclusion('${e.from}', '${e.to}')"
+                        onclick="removeExclusion('${escapeHtml(e.from)}', '${escapeHtml(e.to)}')"
                         class="text-red-600 hover:text-red-800 font-bold"
                     >
                         ×
@@ -362,6 +411,8 @@
                 return;
             }
 
+            // Generate new session ID
+            sessionId = generateSessionId();
             saveToStorage();
 
             // Show success
@@ -372,13 +423,22 @@
             });
 
             document.getElementById('showResultsBtn').classList.remove('hidden');
-            alert(`¡Sorteo generado exitosamente! (${attempts} ${attempts === 1 ? 'intento' : 'intentos'})`);
+            document.getElementById('showLinksBtn').classList.remove('hidden');
+            alert(`¡Sorteo generado exitosamente! (${attempts} ${attempts === 1 ? 'intento' : 'intentos'})\n\nAhora puedes enviar los enlaces a los participantes.`);
         }
 
         function showResults() {
             const section = document.getElementById('resultsSection');
             section.classList.remove('hidden');
             renderResults();
+            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function showLinks() {
+            const section = document.getElementById('linksSection');
+            section.classList.remove('hidden');
+            renderLinks();
+            updateTrackingStatus();
             section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
@@ -396,17 +456,134 @@
                         onclick="toggleReveal('reveal-${index}')"
                         class="w-full text-left px-6 py-4 flex items-center justify-between"
                     >
-                        <span class="font-semibold text-gray-800 text-lg">${giver}</span>
+                        <span class="font-semibold text-gray-800 text-lg">${escapeHtml(giver)}</span>
                         <span class="text-purple-600 font-semibold">👆 Clic para revelar</span>
                     </button>
                     <div id="reveal-${index}" class="hidden px-6 pb-4">
                         <div class="bg-white rounded-lg p-4 border-2 border-purple-300">
                             <p class="text-gray-600">Le regala a:</p>
-                            <p class="text-2xl font-bold text-purple-600">🎁 ${receiver}</p>
+                            <p class="text-2xl font-bold text-purple-600">🎁 ${escapeHtml(receiver)}</p>
                         </div>
                     </div>
                 </div>
             `).join('');
+        }
+
+        function renderLinks() {
+            const container = document.getElementById('linksList');
+
+            if (Object.keys(assignments).length === 0) {
+                container.innerHTML = '<p class="text-gray-500">No hay asignaciones aún. Genera un sorteo primero.</p>';
+                return;
+            }
+
+            const baseUrl = window.location.href.replace('index.html', '').replace(/\/$/, '');
+
+            container.innerHTML = Object.entries(assignments).map(([giver, receiver]) => {
+                const link = generateLink(giver, receiver);
+                const whatsappLink = generateWhatsAppLink(giver, link);
+
+                return `
+                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 card-hover">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-bold text-gray-800 text-lg">${escapeHtml(giver)}</h3>
+                            <span id="status-${escapeHtml(giver)}" class="text-sm px-3 py-1 rounded-full bg-gray-200 text-gray-600">
+                                ⏳ No abierto
+                            </span>
+                        </div>
+                        <div class="flex gap-2 flex-wrap">
+                            <a
+                                href="${whatsappLink}"
+                                target="_blank"
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                            >
+                                <span>💬</span> Enviar por WhatsApp
+                            </a>
+                            <button
+                                onclick="copyLink('${link}')"
+                                class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                            >
+                                <span>📋</span> Copiar enlace
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function generateLink(giver, receiver) {
+            const baseUrl = window.location.href.replace('index.html', '').replace(/\/$/, '');
+            const data = {
+                s: sessionId,
+                g: btoa(encodeURIComponent(giver)),
+                r: btoa(encodeURIComponent(receiver))
+            };
+            const params = new URLSearchParams(data).toString();
+            return `${baseUrl}/reveal.html?${params}`;
+        }
+
+        function generateWhatsAppLink(giver, link) {
+            const message = encodeURIComponent(
+                `🎅 ¡Hola ${giver}! 🎁\n\n` +
+                `Has sido seleccionado para participar en el Amigo Secreto.\n\n` +
+                `Haz clic en este enlace para descubrir a quién le vas a regalar:\n\n` +
+                `${link}\n\n` +
+                `¡No compartas este enlace con nadie! 🤫`
+            );
+            return `https://wa.me/?text=${message}`;
+        }
+
+        function copyLink(link) {
+            navigator.clipboard.writeText(link).then(() => {
+                alert('¡Enlace copiado al portapapeles!');
+            }).catch(() => {
+                prompt('Copia este enlace:', link);
+            });
+        }
+
+        function updateTrackingStatus() {
+            if (!sessionId) return;
+
+            // Load opened links from localStorage
+            const trackingKey = `secretSanta_tracking_${sessionId}`;
+            const trackingData = localStorage.getItem(trackingKey);
+            openedLinks = trackingData ? JSON.parse(trackingData) : {};
+
+            // Update status badges
+            Object.keys(assignments).forEach(giver => {
+                const statusEl = document.getElementById(`status-${giver}`);
+                if (statusEl) {
+                    if (openedLinks[giver]) {
+                        statusEl.className = 'text-sm px-3 py-1 rounded-full bg-green-200 text-green-800';
+                        statusEl.innerHTML = '✅ Abierto';
+                    } else {
+                        statusEl.className = 'text-sm px-3 py-1 rounded-full bg-gray-200 text-gray-600 pulse';
+                        statusEl.innerHTML = '⏳ No abierto';
+                    }
+                }
+            });
+
+            // Update tracking summary
+            const trackingStatusEl = document.getElementById('trackingStatus');
+            if (trackingStatusEl && Object.keys(assignments).length > 0) {
+                const total = Object.keys(assignments).length;
+                const opened = Object.values(openedLinks).filter(v => v).length;
+                const percentage = Math.round((opened / total) * 100);
+
+                trackingStatusEl.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-700">
+                            <strong>${opened}</strong> de <strong>${total}</strong> participantes han abierto su enlace
+                        </span>
+                        <span class="text-lg font-bold ${percentage === 100 ? 'text-green-600' : 'text-blue-600'}">
+                            ${percentage}%
+                        </span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                        <div class="bg-green-600 h-2 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+                    </div>
+                `;
+            }
         }
 
         function toggleReveal(id) {
@@ -428,9 +605,16 @@
         function resetAll() {
             if (!confirm('¿Estás seguro? Esto eliminará todos los datos.')) return;
 
+            // Clear tracking data
+            if (sessionId) {
+                localStorage.removeItem(`secretSanta_tracking_${sessionId}`);
+            }
+
             participants = [];
             exclusions = [];
             assignments = {};
+            sessionId = '';
+            openedLinks = {};
 
             localStorage.removeItem('secretSanta');
 
@@ -438,7 +622,9 @@
             renderExclusions();
             document.getElementById('exclusionsSection').style.display = 'none';
             document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('linksSection').classList.add('hidden');
             document.getElementById('showResultsBtn').classList.add('hidden');
+            document.getElementById('showLinksBtn').classList.add('hidden');
 
             alert('Todos los datos han sido eliminados');
         }
@@ -453,6 +639,7 @@
                 participants,
                 exclusions,
                 assignments,
+                sessionId,
                 exportDate: new Date().toISOString()
             };
 
@@ -481,6 +668,7 @@
                     participants = data.participants;
                     exclusions = data.exclusions || [];
                     assignments = data.assignments || {};
+                    sessionId = data.sessionId || '';
 
                     saveToStorage();
                     renderParticipants();
@@ -493,6 +681,7 @@
 
                     if (Object.keys(assignments).length > 0) {
                         document.getElementById('showResultsBtn').classList.remove('hidden');
+                        document.getElementById('showLinksBtn').classList.remove('hidden');
                     }
 
                     alert('Datos importados exitosamente');
@@ -504,6 +693,12 @@
 
             // Reset input
             event.target.value = '';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
     </script>
 </body>
