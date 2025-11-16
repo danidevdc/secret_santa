@@ -251,13 +251,15 @@
             document.getElementById('giftState').classList.remove('hidden');
             document.getElementById('giverName').textContent = giver;
 
-            // Mark as opened in localStorage
-            markAsOpened();
+            // Don't mark as opened yet - wait until they click the gift
         }
 
         function openGift() {
             if (hasOpened) return;
             hasOpened = true;
+
+            // Mark as opened NOW when they click the gift
+            markAsOpened();
 
             const giftBox = document.getElementById('giftBox');
             giftBox.classList.add('gift-opening');
