@@ -90,12 +90,12 @@
                         type="text"
                         id="participantName"
                         placeholder="Nombre..."
-                        class="flex-1 min-w-0 px-3 sm:px-4 py-3 text-base border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                        class="flex-1 min-w-0 px-3 sm:px-4 py-3 text-base border-2 border-gray-300 rounded-lg focus:border-red-500 focus:outline-none transition-colors"
                         onkeypress="if(event.key === 'Enter') addParticipant()"
                     >
                     <button
                         onclick="addParticipant()"
-                        class="bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white px-3 sm:px-6 py-3 rounded-lg font-semibold transition-colors text-sm sm:text-base flex-shrink-0"
+                        class="bg-red-600 hover:bg-red-700 active:bg-red-800 text-white px-3 sm:px-6 py-3 rounded-lg font-semibold transition-colors text-sm sm:text-base flex-shrink-0"
                     >
                         <span class="hidden sm:inline">Agregar</span>
                         <span class="sm:hidden text-xl">+</span>
@@ -126,7 +126,7 @@
                     <button
                         onclick="showLinks()"
                         id="showLinksBtn"
-                        class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-4 sm:px-6 py-3 sm:py-3 rounded-lg font-semibold transition-colors hidden flex items-center justify-center gap-2 text-sm sm:text-base min-h-[44px]"
+                        class="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white px-4 sm:px-6 py-3 sm:py-3 rounded-lg font-semibold transition-colors hidden flex items-center justify-center gap-2 text-sm sm:text-base min-h-[44px]"
                     >
                         <span>📱</span> <span class="hidden sm:inline">Enviar Enlaces</span><span class="sm:hidden">Enlaces</span>
                     </button>
@@ -159,11 +159,11 @@
                 </h2>
                 <p class="text-gray-600 text-xs sm:text-sm mb-3">Define quiénes NO pueden intercambiar regalos entre sí (ej: parejas, familia). La exclusión funciona en ambas direcciones automáticamente.</p>
                 <div class="flex flex-col sm:flex-row gap-2 mb-3">
-                    <select id="excludeFrom" class="flex-1 px-3 sm:px-4 py-3 text-base border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                    <select id="excludeFrom" class="flex-1 px-3 sm:px-4 py-3 text-base border-2 border-gray-300 rounded-lg focus:border-red-500 focus:outline-none">
                         <option value="">Seleccionar persona...</option>
                     </select>
                     <span class="hidden sm:flex items-center text-gray-600">→</span>
-                    <select id="excludeTo" class="flex-1 px-3 sm:px-4 py-3 text-base border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                    <select id="excludeTo" class="flex-1 px-3 sm:px-4 py-3 text-base border-2 border-gray-300 rounded-lg focus:border-red-500 focus:outline-none">
                         <option value="">No pueden intercambiar con...</option>
                     </select>
                     <button
@@ -506,18 +506,18 @@
             }
 
             container.innerHTML = Object.entries(assignments).map(([giver, receiver], index) => `
-                <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg overflow-hidden card-hover">
+                <div class="bg-gradient-to-r from-red-50 to-green-50 rounded-lg overflow-hidden card-hover">
                     <button
                         onclick="toggleReveal('reveal-${index}')"
                         class="w-full text-left px-6 py-4 flex items-center justify-between"
                     >
                         <span class="font-semibold text-gray-800 text-lg">${escapeHtml(giver)}</span>
-                        <span class="text-purple-600 font-semibold">👆 Clic para revelar</span>
+                        <span class="text-red-600 font-semibold">👆 Clic para revelar</span>
                     </button>
                     <div id="reveal-${index}" class="hidden px-6 pb-4">
-                        <div class="bg-white rounded-lg p-4 border-2 border-purple-300">
+                        <div class="bg-white rounded-lg p-4 border-2 border-red-300">
                             <p class="text-gray-600">Le regala a:</p>
-                            <p class="text-2xl font-bold text-purple-600">🎁 ${escapeHtml(receiver)}</p>
+                            <p class="text-2xl font-bold text-green-600">🎁 ${escapeHtml(receiver)}</p>
                         </div>
                     </div>
                 </div>
