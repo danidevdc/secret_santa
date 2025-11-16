@@ -133,14 +133,14 @@
                 <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 flex items-center">
                     <span class="mr-2">🚫</span> Exclusiones (Opcional)
                 </h2>
-                <p class="text-gray-600 text-xs sm:text-sm mb-3">Define quién NO puede regalarle a quién (ej: parejas, familia directa)</p>
+                <p class="text-gray-600 text-xs sm:text-sm mb-3">Define quiénes NO pueden intercambiar regalos entre sí (ej: parejas, familia). La exclusión funciona en ambas direcciones automáticamente.</p>
                 <div class="flex flex-col sm:flex-row gap-2 mb-3">
                     <select id="excludeFrom" class="flex-1 px-3 sm:px-4 py-3 text-base border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
                         <option value="">Seleccionar persona...</option>
                     </select>
                     <span class="hidden sm:flex items-center text-gray-600">→</span>
                     <select id="excludeTo" class="flex-1 px-3 sm:px-4 py-3 text-base border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
-                        <option value="">No puede regalarle a...</option>
+                        <option value="">No pueden intercambiar con...</option>
                     </select>
                     <button
                         onclick="addExclusion()"
@@ -320,7 +320,7 @@
 
             const options = participants.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
             fromSelect.innerHTML = '<option value="">Seleccionar persona...</option>' + options;
-            toSelect.innerHTML = '<option value="">No puede regalarle a...</option>' + options;
+            toSelect.innerHTML = '<option value="">No pueden intercambiar con...</option>' + options;
         }
 
         function addExclusion() {
@@ -337,18 +337,27 @@
                 return;
             }
 
-            if (exclusions.some(e => e.from === from && e.to === to)) {
+            // Check if exclusion already exists in either direction
+            if (exclusions.some(e =>
+                (e.from === from && e.to === to) ||
+                (e.from === to && e.to === from)
+            )) {
                 alert('Esta exclusión ya existe');
                 return;
             }
 
+            // Add bidirectional exclusion (both directions)
             exclusions.push({ from, to });
+            exclusions.push({ from: to, to: from });
             renderExclusions();
             saveToStorage();
         }
 
         function removeExclusion(from, to) {
-            exclusions = exclusions.filter(e => !(e.from === from && e.to === to));
+            // Remove both directions of the exclusion
+            exclusions = exclusions.filter(e =>
+                !((e.from === from && e.to === to) || (e.from === to && e.to === from))
+            );
             renderExclusions();
             saveToStorage();
         }
@@ -361,9 +370,24 @@
                 return;
             }
 
-            container.innerHTML = exclusions.map(e => `
+            // Filter to show only unique pairs (avoid showing both A→B and B→A)
+            const uniqueExclusions = [];
+            const seen = new Set();
+
+            exclusions.forEach(e => {
+                const key1 = `${e.from}-${e.to}`;
+                const key2 = `${e.to}-${e.from}`;
+
+                if (!seen.has(key1) && !seen.has(key2)) {
+                    uniqueExclusions.push(e);
+                    seen.add(key1);
+                    seen.add(key2);
+                }
+            });
+
+            container.innerHTML = uniqueExclusions.map(e => `
                 <div class="flex items-center justify-between bg-orange-50 px-3 py-2 rounded text-sm">
-                    <span class="text-gray-700">${escapeHtml(e.from)} → <span class="font-semibold">NO</span> → ${escapeHtml(e.to)}</span>
+                    <span class="text-gray-700">${escapeHtml(e.from)} <span class="font-semibold">↔</span> ${escapeHtml(e.to)} <span class="text-gray-500">(no intercambian)</span></span>
                     <button
                         onclick="removeExclusion('${escapeHtml(e.from)}', '${escapeHtml(e.to)}')"
                         class="text-red-600 hover:text-red-800 font-bold"
