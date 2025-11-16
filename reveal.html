@@ -40,14 +40,24 @@
         }
 
         .gift-box {
-            font-size: 120px;
+            font-size: 80px;
             cursor: pointer;
             animation: float 3s ease-in-out infinite;
             transition: transform 0.3s;
         }
 
+        @media (min-width: 640px) {
+            .gift-box {
+                font-size: 120px;
+            }
+        }
+
         .gift-box:hover {
             animation: shake 0.5s ease-in-out;
+        }
+
+        .gift-box:active {
+            transform: scale(0.95);
         }
 
         .gift-opening {
@@ -98,50 +108,50 @@
         }
     </style>
 </head>
-<body class="min-h-screen gradient-bg flex items-center justify-center p-4">
+<body class="min-h-screen gradient-bg flex items-center justify-center p-3 sm:p-4">
     <div class="max-w-2xl w-full">
         <!-- Loading State -->
         <div id="loadingState" class="text-center fade-in">
-            <div class="bg-white rounded-2xl shadow-2xl p-12 mb-6">
-                <div class="text-6xl mb-4 sparkle">⏳</div>
-                <h1 class="text-3xl font-bold text-gray-800 mb-2">Cargando...</h1>
-                <p class="text-gray-600">Preparando tu regalo especial...</p>
+            <div class="bg-white rounded-xl sm:rounded-2xl shadow-2xl p-6 sm:p-8 md:p-12 mb-4 sm:mb-6">
+                <div class="text-5xl sm:text-6xl mb-4 sparkle">⏳</div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Cargando...</h1>
+                <p class="text-sm sm:text-base text-gray-600">Preparando tu regalo especial...</p>
             </div>
         </div>
 
         <!-- Error State -->
         <div id="errorState" class="hidden text-center fade-in">
-            <div class="bg-white rounded-2xl shadow-2xl p-12 mb-6">
-                <div class="text-6xl mb-4">❌</div>
-                <h1 class="text-3xl font-bold text-gray-800 mb-2">¡Oops!</h1>
-                <p class="text-gray-600 mb-4">Este enlace no es válido o ha expirado.</p>
-                <p class="text-sm text-gray-500">Por favor contacta al organizador del Amigo Secreto.</p>
+            <div class="bg-white rounded-xl sm:rounded-2xl shadow-2xl p-6 sm:p-8 md:p-12 mb-4 sm:mb-6">
+                <div class="text-5xl sm:text-6xl mb-4">❌</div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">¡Oops!</h1>
+                <p class="text-sm sm:text-base text-gray-600 mb-4">Este enlace no es válido o ha expirado.</p>
+                <p class="text-xs sm:text-sm text-gray-500">Por favor contacta al organizador del Amigo Secreto.</p>
             </div>
         </div>
 
         <!-- Gift Opening State -->
         <div id="giftState" class="hidden text-center">
-            <div class="bg-white rounded-2xl shadow-2xl p-12 mb-6 fade-in">
-                <h1 class="text-4xl font-bold text-gray-800 mb-4">
+            <div class="bg-white rounded-xl sm:rounded-2xl shadow-2xl p-6 sm:p-8 md:p-12 mb-4 sm:mb-6 fade-in">
+                <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-4">
                     ¡Hola <span id="giverName" class="text-purple-600"></span>! 🎅
                 </h1>
-                <p class="text-gray-600 mb-8 text-lg">
+                <p class="text-gray-600 mb-6 sm:mb-8 text-sm sm:text-base md:text-lg px-2">
                     Has sido seleccionado para participar en el <strong>Amigo Secreto</strong>
                 </p>
 
-                <div class="relative my-12">
+                <div class="relative my-8 sm:my-12">
                     <div id="giftBox" class="gift-box inline-block relative" onclick="openGift()">
                         🎁
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <div class="text-2xl animate-bounce">👆</div>
+                            <div class="text-xl sm:text-2xl animate-bounce">👆</div>
                         </div>
                     </div>
-                    <p class="text-purple-600 font-semibold mt-4 text-xl">
+                    <p class="text-purple-600 font-semibold mt-4 text-base sm:text-lg md:text-xl px-4">
                         Haz clic en el regalo para descubrir tu asignación
                     </p>
                 </div>
 
-                <div class="bg-blue-50 rounded-lg p-4 text-sm text-gray-600">
+                <div class="bg-blue-50 rounded-lg p-3 sm:p-4 text-xs sm:text-sm text-gray-600">
                     <p>🤫 <strong>Recuerda:</strong> Mantén el secreto y no compartas esta información con nadie</p>
                 </div>
             </div>
@@ -149,25 +159,25 @@
 
         <!-- Reveal State -->
         <div id="revealState" class="hidden text-center">
-            <div class="bg-white rounded-2xl shadow-2xl p-12 mb-6 reveal-container">
-                <div class="text-6xl mb-6">🎉</div>
-                <h1 class="text-3xl font-bold text-gray-800 mb-6">
+            <div class="bg-white rounded-xl sm:rounded-2xl shadow-2xl p-6 sm:p-8 md:p-12 mb-4 sm:mb-6 reveal-container">
+                <div class="text-5xl sm:text-6xl mb-4 sm:mb-6">🎉</div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6">
                     ¡Tu Amigo Secreto es...!
                 </h1>
 
-                <div class="bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl p-8 mb-6">
-                    <div class="text-7xl mb-4">🎁</div>
-                    <p class="text-gray-600 text-xl mb-2">Le vas a regalar a:</p>
-                    <h2 id="receiverName" class="text-5xl font-bold text-purple-600 mb-4"></h2>
-                    <div class="text-4xl">🎊</div>
+                <div class="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 mb-4 sm:mb-6">
+                    <div class="text-5xl sm:text-6xl md:text-7xl mb-3 sm:mb-4">🎁</div>
+                    <p class="text-gray-600 text-sm sm:text-base md:text-xl mb-2">Le vas a regalar a:</p>
+                    <h2 id="receiverName" class="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-600 mb-3 sm:mb-4 break-words px-2"></h2>
+                    <div class="text-3xl sm:text-4xl">🎊</div>
                 </div>
 
-                <div class="space-y-4 text-left">
-                    <div class="bg-green-50 rounded-lg p-4">
-                        <p class="text-gray-700">
+                <div class="space-y-3 sm:space-y-4 text-left">
+                    <div class="bg-green-50 rounded-lg p-3 sm:p-4">
+                        <p class="text-gray-700 text-sm sm:text-base">
                             <strong>✨ Consejos:</strong>
                         </p>
-                        <ul class="list-disc list-inside text-gray-600 text-sm mt-2 space-y-1">
+                        <ul class="list-disc list-inside text-gray-600 text-xs sm:text-sm mt-2 space-y-1">
                             <li>Piensa en algo que le guste a esta persona</li>
                             <li>El presupuesto sugerido debe respetarse</li>
                             <li>La creatividad vale más que el precio</li>
@@ -175,20 +185,20 @@
                         </ul>
                     </div>
 
-                    <div class="bg-yellow-50 rounded-lg p-4">
-                        <p class="text-gray-700">
+                    <div class="bg-yellow-50 rounded-lg p-3 sm:p-4">
+                        <p class="text-gray-700 text-sm sm:text-base">
                             <strong>🤫 Muy importante:</strong>
                         </p>
-                        <p class="text-gray-600 text-sm mt-2">
+                        <p class="text-gray-600 text-xs sm:text-sm mt-2">
                             No le digas a nadie quién es tu amigo secreto. ¡Ese es el objetivo del juego!
                         </p>
                     </div>
                 </div>
 
-                <div class="mt-8">
+                <div class="mt-6 sm:mt-8">
                     <button
                         onclick="location.reload()"
-                        class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+                        class="bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white px-6 sm:px-8 py-3 rounded-lg font-semibold transition-colors text-sm sm:text-base min-h-[44px] w-full sm:w-auto"
                     >
                         Ver de nuevo
                     </button>
@@ -197,7 +207,7 @@
         </div>
 
         <!-- Footer -->
-        <div class="text-center text-white/80 text-sm fade-in">
+        <div class="text-center text-white/80 text-xs sm:text-sm fade-in">
             <p>Powered by Amigo Secreto App 🎅</p>
         </div>
     </div>
