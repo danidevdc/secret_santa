@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amigo Secreto 🎁</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body class="min-h-screen gradient-bg py-8 px-4">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8 fade-in">
+            <h1 class="text-5xl font-bold text-white mb-2">🎅 Amigo Secreto 🎁</h1>
+            <p class="text-white/80 text-lg">Organiza tu intercambio de regalos de forma fácil y divertida</p>
+        </div>
+
+        <!-- Main Card -->
+        <div class="bg-white rounded-2xl shadow-2xl p-8 mb-6 fade-in">
+            <!-- Add Participant Section -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">👥</span> Participantes
+                </h2>
+                <div class="flex gap-2 mb-4">
+                    <input
+                        type="text"
+                        id="participantName"
+                        placeholder="Nombre del participante..."
+                        class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none transition-colors"
+                        onkeypress="if(event.key === 'Enter') addParticipant()"
+                    >
+                    <button
+                        onclick="addParticipant()"
+                        class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                    >
+                        Agregar
+                    </button>
+                </div>
+
+                <!-- Participants List -->
+                <div id="participantsList" class="space-y-2 mb-4">
+                    <!-- Participants will be added here -->
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-3 flex-wrap">
+                    <button
+                        onclick="generateAssignments()"
+                        id="generateBtn"
+                        class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                        <span>🎲</span> Generar Sorteo
+                    </button>
+                    <button
+                        onclick="showResults()"
+                        id="showResultsBtn"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors hidden flex items-center gap-2"
+                    >
+                        <span>👀</span> Ver Asignaciones
+                    </button>
+                    <button
+                        onclick="resetAll()"
+                        class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                    >
+                        <span>🔄</span> Reiniciar Todo
+                    </button>
+                    <button
+                        onclick="exportData()"
+                        class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                    >
+                        <span>💾</span> Exportar
+                    </button>
+                    <button
+                        onclick="document.getElementById('importFile').click()"
+                        class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                    >
+                        <span>📁</span> Importar
+                    </button>
+                    <input type="file" id="importFile" accept=".json" class="hidden" onchange="importData(event)">
+                </div>
+            </div>
+
+            <!-- Exclusions Section -->
+            <div class="mb-6 border-t pt-6" id="exclusionsSection" style="display: none;">
+                <h2 class="text-xl font-bold text-gray-800 mb-3 flex items-center">
+                    <span class="mr-2">🚫</span> Exclusiones (Opcional)
+                </h2>
+                <p class="text-gray-600 text-sm mb-3">Define quién NO puede regalarle a quién (ej: parejas, familia directa)</p>
+                <div class="flex gap-2 mb-3">
+                    <select id="excludeFrom" class="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                        <option value="">Seleccionar persona...</option>
+                    </select>
+                    <span class="flex items-center text-gray-600">→</span>
+                    <select id="excludeTo" class="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                        <option value="">No puede regalarle a...</option>
+                    </select>
+                    <button
+                        onclick="addExclusion()"
+                        class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+                    >
+                        Agregar
+                    </button>
+                </div>
+                <div id="exclusionsList" class="space-y-1">
+                    <!-- Exclusions will be added here -->
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" class="border-t pt-6 hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2">🎁</span> Resultados
+                </h2>
+                <p class="text-gray-600 mb-4">Haz clic en cada persona para revelar a quién le regala:</p>
+                <div id="resultsList" class="space-y-3">
+                    <!-- Results will be added here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Card -->
+        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-white fade-in">
+            <h3 class="font-bold text-lg mb-2">💡 Cómo funciona:</h3>
+            <ol class="list-decimal list-inside space-y-1 text-white/90">
+                <li>Agrega los nombres de todos los participantes</li>
+                <li>(Opcional) Define exclusiones si hay personas que no pueden intercambiar regalos</li>
+                <li>Haz clic en "Generar Sorteo" para crear las asignaciones aleatorias</li>
+                <li>Revela las asignaciones una por una para mantener el secreto</li>
+                <li>¡Exporta los datos para guardarlos o compartirlos!</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let participants = [];
+        let exclusions = [];
+        let assignments = {};
+
+        // Load data from localStorage on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFromStorage();
+            renderParticipants();
+            updateExclusionSelects();
+        });
+
+        function loadFromStorage() {
+            const saved = localStorage.getItem('secretSanta');
+            if (saved) {
+                const data = JSON.parse(saved);
+                participants = data.participants || [];
+                exclusions = data.exclusions || [];
+                assignments = data.assignments || {};
+
+                if (Object.keys(assignments).length > 0) {
+                    document.getElementById('showResultsBtn').classList.remove('hidden');
+                }
+            }
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('secretSanta', JSON.stringify({
+                participants,
+                exclusions,
+                assignments
+            }));
+        }
+
+        function addParticipant() {
+            const input = document.getElementById('participantName');
+            const name = input.value.trim();
+
+            if (!name) {
+                alert('Por favor ingresa un nombre');
+                return;
+            }
+
+            if (participants.includes(name)) {
+                alert('Este participante ya existe');
+                return;
+            }
+
+            participants.push(name);
+            input.value = '';
+            renderParticipants();
+            updateExclusionSelects();
+            saveToStorage();
+
+            // Show exclusions section when we have participants
+            if (participants.length > 1) {
+                document.getElementById('exclusionsSection').style.display = 'block';
+            }
+        }
+
+        function removeParticipant(name) {
+            if (!confirm(`¿Eliminar a ${name}?`)) return;
+
+            participants = participants.filter(p => p !== name);
+            exclusions = exclusions.filter(e => e.from !== name && e.to !== name);
+            delete assignments[name];
+
+            renderParticipants();
+            updateExclusionSelects();
+            renderExclusions();
+            saveToStorage();
+
+            if (participants.length < 2) {
+                document.getElementById('exclusionsSection').style.display = 'none';
+            }
+        }
+
+        function renderParticipants() {
+            const container = document.getElementById('participantsList');
+
+            if (participants.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">No hay participantes aún. ¡Agrega algunos!</p>';
+                return;
+            }
+
+            container.innerHTML = participants.map((name, index) => `
+                <div class="flex items-center justify-between bg-gray-50 px-4 py-3 rounded-lg slide-in" style="animation-delay: ${index * 0.05}s">
+                    <span class="font-medium text-gray-800">${name}</span>
+                    <button
+                        onclick="removeParticipant('${name}')"
+                        class="text-red-600 hover:text-red-800 font-bold text-xl transition-colors"
+                        title="Eliminar"
+                    >
+                        ×
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function updateExclusionSelects() {
+            const fromSelect = document.getElementById('excludeFrom');
+            const toSelect = document.getElementById('excludeTo');
+
+            const options = participants.map(p => `<option value="${p}">${p}</option>`).join('');
+            fromSelect.innerHTML = '<option value="">Seleccionar persona...</option>' + options;
+            toSelect.innerHTML = '<option value="">No puede regalarle a...</option>' + options;
+        }
+
+        function addExclusion() {
+            const from = document.getElementById('excludeFrom').value;
+            const to = document.getElementById('excludeTo').value;
+
+            if (!from || !to) {
+                alert('Selecciona ambas personas');
+                return;
+            }
+
+            if (from === to) {
+                alert('Una persona no puede excluirse a sí misma');
+                return;
+            }
+
+            if (exclusions.some(e => e.from === from && e.to === to)) {
+                alert('Esta exclusión ya existe');
+                return;
+            }
+
+            exclusions.push({ from, to });
+            renderExclusions();
+            saveToStorage();
+        }
+
+        function removeExclusion(from, to) {
+            exclusions = exclusions.filter(e => !(e.from === from && e.to === to));
+            renderExclusions();
+            saveToStorage();
+        }
+
+        function renderExclusions() {
+            const container = document.getElementById('exclusionsList');
+
+            if (exclusions.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">No hay exclusiones definidas</p>';
+                return;
+            }
+
+            container.innerHTML = exclusions.map(e => `
+                <div class="flex items-center justify-between bg-orange-50 px-3 py-2 rounded text-sm">
+                    <span class="text-gray-700">${e.from} → <span class="font-semibold">NO</span> → ${e.to}</span>
+                    <button
+                        onclick="removeExclusion('${e.from}', '${e.to}')"
+                        class="text-red-600 hover:text-red-800 font-bold"
+                    >
+                        ×
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function generateAssignments() {
+            if (participants.length < 2) {
+                alert('Necesitas al menos 2 participantes');
+                return;
+            }
+
+            // Try to generate valid assignments
+            let attempts = 0;
+            let maxAttempts = 1000;
+            let validAssignment = false;
+
+            while (!validAssignment && attempts < maxAttempts) {
+                attempts++;
+                assignments = {};
+                const available = [...participants];
+                validAssignment = true;
+
+                for (const giver of participants) {
+                    // Filter out invalid recipients
+                    const validRecipients = available.filter(recipient =>
+                        recipient !== giver && // Can't give to themselves
+                        !exclusions.some(e => e.from === giver && e.to === recipient) // Not excluded
+                    );
+
+                    if (validRecipients.length === 0) {
+                        validAssignment = false;
+                        break;
+                    }
+
+                    // Randomly select a recipient
+                    const recipient = validRecipients[Math.floor(Math.random() * validRecipients.length)];
+                    assignments[giver] = recipient;
+
+                    // Remove recipient from available pool
+                    const index = available.indexOf(recipient);
+                    available.splice(index, 1);
+                }
+            }
+
+            if (!validAssignment) {
+                alert('No se pudo generar un sorteo válido con las exclusiones actuales. Por favor revisa las exclusiones.');
+                return;
+            }
+
+            saveToStorage();
+
+            // Show success
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+
+            document.getElementById('showResultsBtn').classList.remove('hidden');
+            alert(`¡Sorteo generado exitosamente! (${attempts} ${attempts === 1 ? 'intento' : 'intentos'})`);
+        }
+
+        function showResults() {
+            const section = document.getElementById('resultsSection');
+            section.classList.remove('hidden');
+            renderResults();
+            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function renderResults() {
+            const container = document.getElementById('resultsList');
+
+            if (Object.keys(assignments).length === 0) {
+                container.innerHTML = '<p class="text-gray-500">No hay asignaciones aún. Genera un sorteo primero.</p>';
+                return;
+            }
+
+            container.innerHTML = Object.entries(assignments).map(([giver, receiver], index) => `
+                <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg overflow-hidden card-hover">
+                    <button
+                        onclick="toggleReveal('reveal-${index}')"
+                        class="w-full text-left px-6 py-4 flex items-center justify-between"
+                    >
+                        <span class="font-semibold text-gray-800 text-lg">${giver}</span>
+                        <span class="text-purple-600 font-semibold">👆 Clic para revelar</span>
+                    </button>
+                    <div id="reveal-${index}" class="hidden px-6 pb-4">
+                        <div class="bg-white rounded-lg p-4 border-2 border-purple-300">
+                            <p class="text-gray-600">Le regala a:</p>
+                            <p class="text-2xl font-bold text-purple-600">🎁 ${receiver}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleReveal(id) {
+            const element = document.getElementById(id);
+            const isHidden = element.classList.contains('hidden');
+
+            if (isHidden) {
+                element.classList.remove('hidden');
+                confetti({
+                    particleCount: 50,
+                    spread: 60,
+                    origin: { y: 0.7 }
+                });
+            } else {
+                element.classList.add('hidden');
+            }
+        }
+
+        function resetAll() {
+            if (!confirm('¿Estás seguro? Esto eliminará todos los datos.')) return;
+
+            participants = [];
+            exclusions = [];
+            assignments = {};
+
+            localStorage.removeItem('secretSanta');
+
+            renderParticipants();
+            renderExclusions();
+            document.getElementById('exclusionsSection').style.display = 'none';
+            document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('showResultsBtn').classList.add('hidden');
+
+            alert('Todos los datos han sido eliminados');
+        }
+
+        function exportData() {
+            if (participants.length === 0) {
+                alert('No hay datos para exportar');
+                return;
+            }
+
+            const data = {
+                participants,
+                exclusions,
+                assignments,
+                exportDate: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `amigo-secreto-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    if (!data.participants || !Array.isArray(data.participants)) {
+                        throw new Error('Formato inválido');
+                    }
+
+                    participants = data.participants;
+                    exclusions = data.exclusions || [];
+                    assignments = data.assignments || {};
+
+                    saveToStorage();
+                    renderParticipants();
+                    updateExclusionSelects();
+                    renderExclusions();
+
+                    if (participants.length > 1) {
+                        document.getElementById('exclusionsSection').style.display = 'block';
+                    }
+
+                    if (Object.keys(assignments).length > 0) {
+                        document.getElementById('showResultsBtn').classList.remove('hidden');
+                    }
+
+                    alert('Datos importados exitosamente');
+                } catch (error) {
+                    alert('Error al importar el archivo: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+
+            // Reset input
+            event.target.value = '';
+        }
+    </script>
+</body>
+</html>
